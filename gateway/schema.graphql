@@ -1,0 +1,56 @@
+# The platform's PUBLIC CONTRACT. Every internal tool — the chat UI, the
+# workflow dashboard, an automation — talks to the company through THIS schema
+# and nothing else. The gateway is the single front door to enterprise data.
+
+"An employee who uses the platform. Their role drives what they may see and do."
+type Employee {
+  id: ID!
+  email: String!
+  displayName: String!
+  role: Role!
+  department: String!
+}
+
+"Coarse-grained authorization roles. Permissions are derived from these."
+enum Role {
+  EMPLOYEE      # can use assistants and run workflows assigned to them
+  MANAGER       # can additionally approve workflow steps
+  ADMIN         # can manage integrations, permissions, and view all analytics
+}
+
+"An internal document the knowledge service may retrieve and ground answers in."
+type Document {
+  id: ID!
+  title: String!
+  source: String!        # e.g. "wiki", "hr-policy", "runbook"
+  updatedAt: String!
+}
+
+"The live state of one workflow execution, surfaced to the dashboard."
+type WorkflowRun {
+  runId: ID!
+  workflowId: ID!
+  status: String!        # running | awaiting_approval | completed | rejected
+  cursor: Int!
+}
+
+type Query {
+  "The currently authenticated employee (resolved from the request context)."
+  me: Employee!
+  "Documents the caller is allowed to see, optionally filtered by source."
+  documents(source: String): [Document!]!
+  "A single workflow run by id, if the caller may see it."
+  run(runId: ID!): WorkflowRun
+}
+
+type Mutation {
+  "Start a workflow; returns the queued run. Any authenticated employee may."
+  startRun(workflowId: ID!): WorkflowRun!
+  "Approve a paused step. Requires MANAGER or ADMIN — enforced in the resolver."
+  approveRun(runId: ID!): WorkflowRun!
+}
+
+schema {
+  query: Query
+  mutation: Mutation
+}
