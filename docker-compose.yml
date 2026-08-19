@@ -1,0 +1,37 @@
+services:
+  gateway:
+    build: .
+    command: node dist/gateway/server.js
+    ports: ["8000:8000"]            # the GraphQL front door
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+      - REDIS_URL=redis://redis:6379
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+    depends_on: [postgres, redis]
+  worker:
+    build: .
+    command: node dist/queue/worker.js   # drains the workflow:runs queue
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+      - REDIS_URL=redis://redis:6379
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+    depends_on: [postgres, redis]
+  web:
+    build: ./web
+    ports: ["5173:5173"]            # the React chat + workflow dashboard
+    depends_on: [gateway]
+  postgres:
+    image: postgres:16
+    environment:
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    ports: ["5432:5432"]            # the enterprise system of record
+  redis:
+    image: redis:7
+    ports: ["6379:6379"]            # the durable workflow queue
+  prometheus:
+    image: prom/prometheus:latest
+    ports: ["9090:9090"]            # scrapes /metrics from gateway + worker
+  grafana:
+    image: grafana/grafana:latest
+    ports: ["3000:3000"]            # usage, reliability, cost dashboards
+    depends_on: [prometheus]
