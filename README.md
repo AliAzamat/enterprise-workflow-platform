@@ -57,11 +57,3 @@ run 2: status=completed           send → {"status":"performed","key":"r1:send"
 | `web/src/` | Dashboard, approve button, and GraphQL client |
 | `db/schema.sql` | `employees` and `documents` tables |
 | [RUNBOOK.md](RUNBOOK.md) | Operations guide |
-
-## Status
-
-- **Missing modules:** `workflow/store` (`createRun`, `loadRun`, `markApproved`, `saveRun`, `loadWorkflow`), `gateway/server`, `gateway/types`, and the Python `db_async` helper.
-- **No build setup:** no `package.json`, `tsconfig.json`, or `Dockerfile` for the root or `web/`, so `docker compose up` can't build the services.
-- **Schema gaps:** there's no `audit_log` or workflow-runs table in `db/schema.sql`.
-- Per-step `approverRole` is defined on workflow steps but not yet enforced; `approveRun` always requires `MANAGER`.
-- The retriever and response cache are in memory.
